@@ -1,6 +1,8 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "./types";
 import { getNotesHandler } from "./notes/getNotes";
 import { createNoteHandler } from "./notes/createNote";
+import { deleteNoteHandler } from "./notes/deleteNote";
+import { updateNoteHandler } from "./notes/updateNote";
 import {
   getCustomerDetailsHandler,
   listCustomerDetailsHandler,
@@ -32,6 +34,8 @@ export * from "./types";
 export * from "./db";
 export { getNotesHandler } from "./notes/getNotes";
 export { createNoteHandler } from "./notes/createNote";
+export { deleteNoteHandler } from "./notes/deleteNote";
+export { updateNoteHandler } from "./notes/updateNote";
 export {
   getCustomerDetailsHandler,
   listCustomerDetailsHandler,
@@ -62,8 +66,8 @@ export { createActivityHandler } from "./activities/createActivity";
 const CORS_HEADERS = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+  "Access-Control-Allow-Methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
 };
 
 /**
@@ -96,11 +100,40 @@ export async function handler(
   }
 
   // 1. Notes API
-  if (method === "GET" && (rawPath.endsWith("/notes") || rawPath.includes("/notes/"))) {
+  if (
+    (method === "GET" && (rawPath.endsWith("/notes") || rawPath.includes("/notes/"))) ||
+    (method === "GET" && (event.queryStringParameters?.action === "notes" || event.queryStringParameters?.action === "get_notes"))
+  ) {
     return getNotesHandler(event);
   }
-  if (method === "POST" && rawPath.endsWith("/notes")) {
+  if (
+    (method === "POST" && rawPath.endsWith("/notes")) ||
+    (method === "POST" && (
+      rawPath.endsWith("/customeranalytics") ||
+      rawPath.endsWith("/customer-analytics") ||
+      event.queryStringParameters?.action === "create_note" ||
+      event.queryStringParameters?.action === "notes"
+    ))
+  ) {
     return createNoteHandler(event);
+  }
+  if (
+    (method === "DELETE" && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
+    (method === "DELETE" && (
+      rawPath.endsWith("/customeranalytics") ||
+      event.queryStringParameters?.action === "delete_note"
+    ))
+  ) {
+    return deleteNoteHandler(event);
+  }
+  if (
+    ((method === "PUT" || method === "PATCH") && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
+    ((method === "PUT" || method === "PATCH") && (
+      rawPath.endsWith("/customeranalytics") ||
+      event.queryStringParameters?.action === "update_note"
+    ))
+  ) {
+    return updateNoteHandler(event);
   }
 
   // 2. Customer Details API
