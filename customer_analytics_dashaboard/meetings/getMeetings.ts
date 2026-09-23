@@ -62,53 +62,41 @@ export async function getMeetingsHandler(
 
     let meetings: MeetingRecord[] = [];
 
-    if (isUuid(customerId)) {
-      // Direct parameterized query by customer_id UUID
-      const sql = `
-        SELECT 
-          id::text,
-          customer_id::text,
-          title,
-          description,
-          meeting_date,
-          duration_minutes,
-          status,
-          meeting_url,
-          created_by::text,
-          created_at,
-          updated_at
-        FROM public.meetings
-        WHERE customer_id = $1
-        ORDER BY meeting_date DESC NULLS LAST, created_at DESC;
-      `;
-      const result = await query<MeetingRecord>(sql, [customerId]);
-      meetings = result.rows;
-    } else {
-      // Parameterized query resolving client_user_id through customers_details
-      const sql = `
-        SELECT 
-          m.id::text,
-          m.customer_id::text,
-          m.title,
-          m.description,
-          m.meeting_date,
-          m.duration_minutes,
-          m.status,
-          m.meeting_url,
-          m.created_by::text,
-          m.created_at,
-          m.updated_at
-        FROM public.meetings m
-        WHERE m.customer_id IN (
-          SELECT cd.id 
-          FROM public.customers_details cd 
-          WHERE LOWER(cd.client_user_id) = LOWER($1)
-        )
-        ORDER BY m.meeting_date DESC NULLS LAST, m.created_at DESC;
-      `;
-      const result = await query<MeetingRecord>(sql, [customerId]);
-      meetings = result.rows;
-    }
+    const sql = `
+      SELECT 
+        m.id::text,
+        m.customer_id::text,
+        m.title,
+        m.description,
+        m.meeting_date,
+        m.duration_minutes,
+        m.status,
+        m.meeting_url,
+        m.created_by::text,
+        m.created_at,
+        m.updated_at
+      FROM public.meetings m
+      WHERE m.customer_id::text = $1
+         OR m.customer_id IN (
+           SELECT c.id 
+           FROM public.customers_details c
+           LEFT JOIN public.users u ON (
+             LOWER(c.client_user_id) = LOWER(u.user_name) 
+             OR LOWER(c.client_user_id) = LOWER(u.email) 
+             OR LOWER(c.client_user_id) = LOWER(u.user_email)
+             OR LOWER(c.client_user_id) = LOWER(u.user_id::text)
+           )
+           WHERE c.id::text = $1 
+              OR LOWER(c.client_user_id) = LOWER($1)
+              OR u.user_id::text = $1
+              OR LOWER(u.user_name) = LOWER($1)
+              OR LOWER(u.email) = LOWER($1)
+              OR LOWER(u.user_email) = LOWER($1)
+         )
+      ORDER BY m.meeting_date DESC NULLS LAST, m.created_at DESC;
+    `;
+    const result = await query<MeetingRecord>(sql, [customerId]);
+    meetings = result.rows;
 
     const responseBody: GetMeetingsResponse = {
       success: true,

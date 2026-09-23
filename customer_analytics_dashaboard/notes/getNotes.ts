@@ -13,14 +13,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET,OPTIONS",
 };
 
-/**
- * Validates whether a string is a standard UUID.
- */
-function isUuid(str: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    str
-  );
-}
+
 
 /**
  * Lambda handler to GET notes for a specific customer.
@@ -61,45 +54,35 @@ export async function getNotesHandler(
 
     let notes: NoteRecord[] = [];
 
-    if (isUuid(customerId)) {
-      // Direct parameterized query by customer_id UUID
-      const sql = `
-        SELECT 
-          id::text,
-          customer_id::text,
-          title,
-          content,
-          created_by::text,
-          created_at,
-          updated_at
-        FROM public.notes
-        WHERE customer_id = $1
-        ORDER BY created_at DESC;
-      `;
-      const result = await query<NoteRecord>(sql, [customerId]);
-      notes = result.rows;
-    } else {
-      // Parameterized query resolving client_user_id through customers_details
-      const sql = `
-        SELECT 
-          n.id::text,
-          n.customer_id::text,
-          n.title,
-          n.content,
-          n.created_by::text,
-          n.created_at,
-          n.updated_at
-        FROM public.notes n
-        WHERE n.customer_id IN (
-          SELECT cd.id 
-          FROM public.customers_details cd 
-          WHERE LOWER(cd.client_user_id) = LOWER($1)
-        )
-        ORDER BY n.created_at DESC;
-      `;
-      const result = await query<NoteRecord>(sql, [customerId]);
-      notes = result.rows;
-    }
+    // Parameterized query resolving customers_details.id, client_user_id, or Cognito user_id
+    const sql = `
+      SELECT 
+        n.id::text,
+        n.customer_id::text,
+        n.title,
+        n.content,
+        n.created_by::text,
+        n.created_at,
+        n.updated_at
+      FROM public.notes n
+      WHERE n.customer_id::text = $1
+         OR n.customer_id IN (
+           SELECT c.id 
+           FROM public.customers_details c
+           LEFT JOIN public.users u ON (
+             LOWER(c.client_user_id) = LOWER(u.user_name) 
+             OR LOWER(c.client_user_id) = LOWER(u.email) 
+             OR LOWER(c.client_user_id) = LOWER(u.user_email)
+             OR LOWER(c.client_user_id) = LOWER(u.user_id::text)
+           )
+           WHERE c.id::text = $1 
+              OR LOWER(c.client_user_id) = LOWER($1)
+              OR u.user_id::text = $1
+         )
+      ORDER BY n.created_at DESC;
+    `;
+    const result = await query<NoteRecord>(sql, [customerId]);
+    notes = result.rows;
 
     const responseBody: GetNotesResponse = {
       success: true,

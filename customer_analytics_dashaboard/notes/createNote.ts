@@ -25,9 +25,17 @@ function isUuid(str: string): boolean {
  */
 async function resolveCustomerUuid(identifier: string): Promise<string | null> {
   const sql = `
-    SELECT id::text 
-    FROM public.customers_details 
-    WHERE id::text = $1 OR LOWER(client_user_id) = LOWER($1)
+    SELECT c.id::text 
+    FROM public.customers_details c
+    LEFT JOIN public.users u ON (
+      LOWER(c.client_user_id) = LOWER(u.user_name) 
+      OR LOWER(c.client_user_id) = LOWER(u.email) 
+      OR LOWER(c.client_user_id) = LOWER(u.user_email)
+      OR LOWER(c.client_user_id) = LOWER(u.user_id::text)
+    )
+    WHERE c.id::text = $1 
+       OR LOWER(c.client_user_id) = LOWER($1)
+       OR u.user_id::text = $1
     LIMIT 1;
   `;
   const res = await query<{ id: string }>(sql, [identifier]);

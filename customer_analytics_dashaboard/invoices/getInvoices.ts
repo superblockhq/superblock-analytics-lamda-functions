@@ -2,8 +2,8 @@ import { query } from "../db";
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyResult,
-  SubscriptionRecord,
-  GetSubscriptionsResponse,
+  InvoiceRecord,
+  GetInvoicesResponse,
 } from "../types";
 
 const CORS_HEADERS = {
@@ -13,7 +13,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET,OPTIONS",
 };
 
-export async function getSubscriptionsHandler(
+export async function getInvoicesHandler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
@@ -37,30 +37,29 @@ export async function getSubscriptionsHandler(
           success: false,
           count: 0,
           customerId: "",
-          subscriptions: [],
+          invoices: [],
           error: "Missing required parameter: 'customerId' (UUID or client_user_id)",
-        } as GetSubscriptionsResponse),
+        } as GetInvoicesResponse),
       };
     }
 
     const sql = `
       SELECT 
-        s.id::text,
-        s.customer_id::text,
-        s.plan_id::text,
-        s.status,
-        s.start_date,
-        s.end_date,
-        s.amount::numeric,
-        s.currency,
-        s.billing_interval,
-        s.created_at,
-        s.updated_at,
-        p.name as plan_name
-      FROM public.subscriptions s
-      LEFT JOIN public.plans p ON s.plan_id = p.id
-      WHERE s.customer_id::text = $1
-         OR s.customer_id IN (
+        i.id::text,
+        i.customer_id::text,
+        i.invoice_number,
+        i.status,
+        i.amount::numeric,
+        i.currency,
+        i.issue_date,
+        i.due_date,
+        i.paid_date,
+        i.description,
+        i.created_at,
+        i.updated_at
+      FROM public.invoices i
+      WHERE i.customer_id::text = $1
+         OR i.customer_id IN (
            SELECT c.id 
            FROM public.customers_details c
            LEFT JOIN public.users u ON (
@@ -76,10 +75,10 @@ export async function getSubscriptionsHandler(
               OR LOWER(u.email) = LOWER($1)
               OR LOWER(u.user_email) = LOWER($1)
          )
-      ORDER BY s.created_at DESC NULLS LAST;
+      ORDER BY i.created_at DESC NULLS LAST;
     `;
 
-    const result = await query<SubscriptionRecord>(sql, [customerId]);
+    const result = await query<InvoiceRecord>(sql, [customerId]);
 
     return {
       statusCode: 200,
@@ -88,11 +87,11 @@ export async function getSubscriptionsHandler(
         success: true,
         count: result.rows.length,
         customerId,
-        subscriptions: result.rows,
-      } as GetSubscriptionsResponse),
+        invoices: result.rows,
+      } as GetInvoicesResponse),
     };
   } catch (error: any) {
-    console.error("Error executing getSubscriptionsHandler:", error);
+    console.error("Error executing getInvoicesHandler:", error);
     return {
       statusCode: 500,
       headers: CORS_HEADERS,
@@ -100,9 +99,9 @@ export async function getSubscriptionsHandler(
         success: false,
         count: 0,
         customerId: "",
-        subscriptions: [],
-        error: error.message || "Failed to retrieve subscriptions",
-      } as GetSubscriptionsResponse),
+        invoices: [],
+        error: error.message || "Failed to retrieve invoices",
+      } as GetInvoicesResponse),
     };
   }
 }

@@ -9,6 +9,8 @@ import {
 } from "./customerDetails/getCustomerDetails";
 import { getMeetingsHandler } from "./meetings/getMeetings";
 import { createMeetingHandler } from "./meetings/createMeeting";
+import { deleteMeetingHandler } from "./meetings/deleteMeeting";
+import { updateMeetingHandler } from "./meetings/updateMeeting";
 import { getContactsHandler } from "./contacts/getContacts";
 import { createContactHandler } from "./contacts/createContact";
 import { getDealsHandler } from "./deals/getDeals";
@@ -29,9 +31,11 @@ import { getUsageMetricsHandler } from "./usageMetrics/getUsageMetrics";
 import { createUsageMetricHandler } from "./usageMetrics/createUsageMetric";
 import { getActivitiesHandler } from "./activities/getActivities";
 import { createActivityHandler } from "./activities/createActivity";
+import { getCredentialsHandler } from "./credentials/getCredentials";
 
 export * from "./types";
 export * from "./db";
+export { getCredentialsHandler } from "./credentials/getCredentials";
 export { getNotesHandler } from "./notes/getNotes";
 export { createNoteHandler } from "./notes/createNote";
 export { deleteNoteHandler } from "./notes/deleteNote";
@@ -42,6 +46,8 @@ export {
 } from "./customerDetails/getCustomerDetails";
 export { getMeetingsHandler } from "./meetings/getMeetings";
 export { createMeetingHandler } from "./meetings/createMeeting";
+export { deleteMeetingHandler } from "./meetings/deleteMeeting";
+export { updateMeetingHandler } from "./meetings/updateMeeting";
 export { getContactsHandler } from "./contacts/getContacts";
 export { createContactHandler } from "./contacts/createContact";
 export { getDealsHandler } from "./deals/getDeals";
@@ -78,213 +84,334 @@ const CORS_HEADERS = {
 export async function handler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
-  const method = (
-    event.httpMethod ||
-    event.requestContext?.http?.method ||
-    "GET"
-  ).toUpperCase();
-  const rawPath = (
-    event.path ||
-    event.rawPath ||
-    event.requestContext?.http?.path ||
-    "/"
-  ).toLowerCase();
+  try {
+    const method = (
+      event.httpMethod ||
+      event.requestContext?.http?.method ||
+      "GET"
+    ).toUpperCase();
+    const rawPath = (
+      event.path ||
+      event.rawPath ||
+      event.requestContext?.http?.path ||
+      "/"
+    ).toLowerCase();
 
-  // Handle CORS Preflight
-  if (method === "OPTIONS") {
+    // Handle CORS Preflight
+    if (method === "OPTIONS") {
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ message: "OK" }),
+      };
+    }
+
+    // Extract query parameter action / resource
+    const action = (
+      event.queryStringParameters?.action ||
+      event.queryStringParameters?.resource ||
+      event.queryStringParameters?.path ||
+      ""
+    ).toLowerCase().replace(/^\/+/, "");
+
+    // 0. Root Health Check / Introspection Route
+    const isRootRequest =
+      rawPath === "/" ||
+      rawPath === "" ||
+      rawPath.endsWith("/customeranalyticsdashaboard") ||
+      rawPath.endsWith("/customeranalyticsdashboard");
+
+    if (method === "GET" && isRootRequest && !action) {
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          status: "healthy",
+          message: "Superblock Analytics Dashboard API is live",
+          timestamp: new Date().toISOString(),
+          version: "1.0.0",
+          supportedEntities: [
+            "notes",
+            "meetings",
+            "customerDetails",
+            "contacts",
+            "deals",
+            "tickets",
+            "teamMembers",
+            "products",
+            "subscriptions",
+            "customerOfferings",
+            "invoices",
+            "usageMetrics",
+            "activities",
+          ],
+        }),
+      };
+    }
+
+    // 1. Notes API
+    if (
+      (method === "GET" && (rawPath.endsWith("/notes") || rawPath.includes("/notes/"))) ||
+      (method === "GET" && (action === "notes" || action === "get_notes"))
+    ) {
+      return await getNotesHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/notes")) ||
+      (method === "POST" && (
+        action === "notes" ||
+        action === "create_note" ||
+        rawPath.endsWith("/customeranalytics") ||
+        rawPath.endsWith("/customer-analytics")
+      ))
+    ) {
+      return await createNoteHandler(event);
+    }
+    if (
+      (method === "DELETE" && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
+      (method === "DELETE" && (action === "delete_note" || action === "notes"))
+    ) {
+      return await deleteNoteHandler(event);
+    }
+    if (
+      ((method === "PUT" || method === "PATCH") && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
+      ((method === "PUT" || method === "PATCH") && (action === "update_note" || action === "notes"))
+    ) {
+      return await updateNoteHandler(event);
+    }
+
+    // 2. Customer Details API
+    if (
+      (method === "GET" && (rawPath.includes("/customer-details") || rawPath.includes("/customer_details"))) ||
+      (method === "GET" && (action === "customer_details" || action === "customerdetails" || action === "customer-details"))
+    ) {
+      if (
+        event.pathParameters?.id ||
+        event.pathParameters?.customerId ||
+        event.queryStringParameters?.id ||
+        event.queryStringParameters?.customerId ||
+        event.queryStringParameters?.clientUserId
+      ) {
+        return await getCustomerDetailsHandler(event);
+      }
+      return await listCustomerDetailsHandler(event);
+    }
+
+    // 3. Meetings API
+    if (
+      (method === "GET" && (rawPath.endsWith("/meetings") || rawPath.includes("/meetings/"))) ||
+      (method === "GET" && (action === "meetings" || action === "get_meetings"))
+    ) {
+      return await getMeetingsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/meetings")) ||
+      (method === "POST" && (action === "meetings" || action === "create_meeting"))
+    ) {
+      return await createMeetingHandler(event);
+    }
+    if (
+      (method === "DELETE" && (rawPath.includes("/meetings/") || rawPath.endsWith("/meetings"))) ||
+      (method === "DELETE" && (action === "delete_meeting" || action === "meetings"))
+    ) {
+      return await deleteMeetingHandler(event);
+    }
+    if (
+      ((method === "PUT" || method === "PATCH") && (rawPath.includes("/meetings/") || rawPath.endsWith("/meetings"))) ||
+      ((method === "PUT" || method === "PATCH") && (action === "update_meeting" || action === "meetings"))
+    ) {
+      return await updateMeetingHandler(event);
+    }
+
+    // 4. Contacts API
+    if (
+      (method === "GET" && (rawPath.endsWith("/contacts") || rawPath.includes("/contacts/"))) ||
+      (method === "GET" && (action === "contacts" || action === "get_contacts"))
+    ) {
+      return await getContactsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/contacts")) ||
+      (method === "POST" && (action === "contacts" || action === "create_contact"))
+    ) {
+      return await createContactHandler(event);
+    }
+
+    // 5. Deals API
+    if (
+      (method === "GET" && (rawPath.endsWith("/deals") || rawPath.includes("/deals/"))) ||
+      (method === "GET" && (action === "deals" || action === "get_deals"))
+    ) {
+      return await getDealsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/deals")) ||
+      (method === "POST" && (action === "deals" || action === "create_deal"))
+    ) {
+      return await createDealHandler(event);
+    }
+
+    // 6. Tickets API
+    if (
+      (method === "GET" && (rawPath.endsWith("/tickets") || rawPath.includes("/tickets/"))) ||
+      (method === "GET" && (action === "tickets" || action === "get_tickets"))
+    ) {
+      return await getTicketsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/tickets")) ||
+      (method === "POST" && (action === "tickets" || action === "create_ticket"))
+    ) {
+      return await createTicketHandler(event);
+    }
+
+    // 7. Team Members API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/team-members") ||
+          rawPath.includes("/team-members/") ||
+          rawPath.endsWith("/team_members") ||
+          rawPath.includes("/team_members/"))) ||
+      (method === "GET" && (action === "team_members" || action === "team-members" || action === "teammembers"))
+    ) {
+      return await getTeamMembersHandler(event);
+    }
+    if (
+      (method === "POST" &&
+        (rawPath.endsWith("/team-members") || rawPath.endsWith("/team_members"))) ||
+      (method === "POST" && (action === "team_members" || action === "team-members" || action === "teammembers"))
+    ) {
+      return await createTeamMemberHandler(event);
+    }
+
+    // 8. Products API
+    if (
+      (method === "GET" && (rawPath.endsWith("/products") || rawPath.includes("/products/"))) ||
+      (method === "GET" && (action === "products" || action === "get_products"))
+    ) {
+      return await getProductsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/products")) ||
+      (method === "POST" && (action === "products" || action === "create_product"))
+    ) {
+      return await createProductHandler(event);
+    }
+
+    // 9. Subscriptions API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/subscriptions") || rawPath.includes("/subscriptions/"))) ||
+      (method === "GET" && (action === "subscriptions" || action === "get_subscriptions"))
+    ) {
+      return await getSubscriptionsHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/subscriptions")) ||
+      (method === "POST" && (action === "subscriptions" || action === "create_subscription"))
+    ) {
+      return await createSubscriptionHandler(event);
+    }
+
+    // 10. Customer Offerings API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/customer-offerings") ||
+          rawPath.includes("/customer-offerings/") ||
+          rawPath.endsWith("/customer_offerings") ||
+          rawPath.includes("/customer_offerings/") ||
+          rawPath.endsWith("/offerings") ||
+          rawPath.includes("/offerings/"))) ||
+      (method === "GET" && (action === "customer_offerings" || action === "customer-offerings" || action === "offerings"))
+    ) {
+      return await getCustomerOfferingsHandler(event);
+    }
+    if (
+      (method === "POST" &&
+        (rawPath.endsWith("/customer-offerings") ||
+          rawPath.endsWith("/customer_offerings") ||
+          rawPath.endsWith("/offerings"))) ||
+      (method === "POST" && (action === "customer_offerings" || action === "customer-offerings" || action === "offerings"))
+    ) {
+      return await createCustomerOfferingHandler(event);
+    }
+
+    // 11. Invoices API
+    if (
+      (method === "GET" && (rawPath.endsWith("/invoices") || rawPath.includes("/invoices/"))) ||
+      (method === "GET" && (action === "invoices" || action === "get_invoices"))
+    ) {
+      return await getInvoicesHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/invoices")) ||
+      (method === "POST" && (action === "invoices" || action === "create_invoice"))
+    ) {
+      return await createInvoiceHandler(event);
+    }
+
+    // 12. Usage Metrics API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/usage-metrics") ||
+          rawPath.includes("/usage-metrics/") ||
+          rawPath.endsWith("/usage_metrics") ||
+          rawPath.includes("/usage_metrics/"))) ||
+      (method === "GET" && (action === "usage_metrics" || action === "usage-metrics" || action === "usagemetrics"))
+    ) {
+      return await getUsageMetricsHandler(event);
+    }
+    if (
+      (method === "POST" &&
+        (rawPath.endsWith("/usage-metrics") || rawPath.endsWith("/usage_metrics"))) ||
+      (method === "POST" && (action === "usage_metrics" || action === "usage-metrics" || action === "usagemetrics"))
+    ) {
+      return await createUsageMetricHandler(event);
+    }
+
+    // 13. Activities API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/activities") || rawPath.includes("/activities/"))) ||
+      (method === "GET" && (action === "activities" || action === "get_activities"))
+    ) {
+      return await getActivitiesHandler(event);
+    }
+    if (
+      (method === "POST" && rawPath.endsWith("/activities")) ||
+      (method === "POST" && (action === "activities" || action === "create_activity"))
+    ) {
+      return await createActivityHandler(event);
+    }
+
+    // 14. Credentials API
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/credentials") || rawPath.includes("/credentials/"))) ||
+      (method === "GET" && (action === "credentials" || action === "get_credentials"))
+    ) {
+      return await getCredentialsHandler(event);
+    }
+
+    // Fallback 404
     return {
-      statusCode: 200,
+      statusCode: 404,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ message: "OK" }),
+      body: JSON.stringify({
+        success: false,
+        error: `Route not found for method ${method} at path ${rawPath}${action ? ` with action=${action}` : ""}`,
+      }),
+    };
+  } catch (error: any) {
+    console.error("Top-level unhandled Lambda error:", error);
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        success: false,
+        error: error?.message || "Internal server error occurred",
+        stack: process.env.NODE_ENV === "development" ? error?.stack : undefined,
+      }),
     };
   }
-
-  // 1. Notes API
-  if (
-    (method === "GET" && (rawPath.endsWith("/notes") || rawPath.includes("/notes/"))) ||
-    (method === "GET" && (event.queryStringParameters?.action === "notes" || event.queryStringParameters?.action === "get_notes"))
-  ) {
-    return getNotesHandler(event);
-  }
-  if (
-    (method === "POST" && rawPath.endsWith("/notes")) ||
-    (method === "POST" && (
-      rawPath.endsWith("/customeranalytics") ||
-      rawPath.endsWith("/customer-analytics") ||
-      event.queryStringParameters?.action === "create_note" ||
-      event.queryStringParameters?.action === "notes"
-    ))
-  ) {
-    return createNoteHandler(event);
-  }
-  if (
-    (method === "DELETE" && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
-    (method === "DELETE" && (
-      rawPath.endsWith("/customeranalytics") ||
-      event.queryStringParameters?.action === "delete_note"
-    ))
-  ) {
-    return deleteNoteHandler(event);
-  }
-  if (
-    ((method === "PUT" || method === "PATCH") && (rawPath.includes("/notes/") || rawPath.endsWith("/notes"))) ||
-    ((method === "PUT" || method === "PATCH") && (
-      rawPath.endsWith("/customeranalytics") ||
-      event.queryStringParameters?.action === "update_note"
-    ))
-  ) {
-    return updateNoteHandler(event);
-  }
-
-  // 2. Customer Details API
-  if (
-    method === "GET" &&
-    (rawPath.includes("/customer-details") || rawPath.includes("/customer_details"))
-  ) {
-    if (
-      event.pathParameters?.id ||
-      event.pathParameters?.customerId ||
-      event.queryStringParameters?.id ||
-      event.queryStringParameters?.customerId ||
-      event.queryStringParameters?.clientUserId
-    ) {
-      return getCustomerDetailsHandler(event);
-    }
-    return listCustomerDetailsHandler(event);
-  }
-
-  // 3. Meetings API
-  if (method === "GET" && (rawPath.endsWith("/meetings") || rawPath.includes("/meetings/"))) {
-    return getMeetingsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/meetings")) {
-    return createMeetingHandler(event);
-  }
-
-  // 4. Contacts API
-  if (method === "GET" && (rawPath.endsWith("/contacts") || rawPath.includes("/contacts/"))) {
-    return getContactsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/contacts")) {
-    return createContactHandler(event);
-  }
-
-  // 5. Deals API
-  if (method === "GET" && (rawPath.endsWith("/deals") || rawPath.includes("/deals/"))) {
-    return getDealsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/deals")) {
-    return createDealHandler(event);
-  }
-
-  // 6. Tickets API
-  if (method === "GET" && (rawPath.endsWith("/tickets") || rawPath.includes("/tickets/"))) {
-    return getTicketsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/tickets")) {
-    return createTicketHandler(event);
-  }
-
-  // 7. Team Members API
-  if (
-    method === "GET" &&
-    (rawPath.endsWith("/team-members") ||
-      rawPath.includes("/team-members/") ||
-      rawPath.endsWith("/team_members") ||
-      rawPath.includes("/team_members/"))
-  ) {
-    return getTeamMembersHandler(event);
-  }
-  if (
-    method === "POST" &&
-    (rawPath.endsWith("/team-members") || rawPath.endsWith("/team_members"))
-  ) {
-    return createTeamMemberHandler(event);
-  }
-
-  // 8. Products API
-  if (method === "GET" && (rawPath.endsWith("/products") || rawPath.includes("/products/"))) {
-    return getProductsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/products")) {
-    return createProductHandler(event);
-  }
-
-  // 9. Subscriptions API
-  if (
-    method === "GET" &&
-    (rawPath.endsWith("/subscriptions") || rawPath.includes("/subscriptions/"))
-  ) {
-    return getSubscriptionsHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/subscriptions")) {
-    return createSubscriptionHandler(event);
-  }
-
-  // 10. Customer Offerings API
-  if (
-    method === "GET" &&
-    (rawPath.endsWith("/customer-offerings") ||
-      rawPath.includes("/customer-offerings/") ||
-      rawPath.endsWith("/customer_offerings") ||
-      rawPath.includes("/customer_offerings/") ||
-      rawPath.endsWith("/offerings") ||
-      rawPath.includes("/offerings/"))
-  ) {
-    return getCustomerOfferingsHandler(event);
-  }
-  if (
-    method === "POST" &&
-    (rawPath.endsWith("/customer-offerings") ||
-      rawPath.endsWith("/customer_offerings") ||
-      rawPath.endsWith("/offerings"))
-  ) {
-    return createCustomerOfferingHandler(event);
-  }
-
-  // 11. Invoices API
-  if (method === "GET" && (rawPath.endsWith("/invoices") || rawPath.includes("/invoices/"))) {
-    return getInvoicesHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/invoices")) {
-    return createInvoiceHandler(event);
-  }
-
-  // 12. Usage Metrics API
-  if (
-    method === "GET" &&
-    (rawPath.endsWith("/usage-metrics") ||
-      rawPath.includes("/usage-metrics/") ||
-      rawPath.endsWith("/usage_metrics") ||
-      rawPath.includes("/usage_metrics/"))
-  ) {
-    return getUsageMetricsHandler(event);
-  }
-  if (
-    method === "POST" &&
-    (rawPath.endsWith("/usage-metrics") || rawPath.endsWith("/usage_metrics"))
-  ) {
-    return createUsageMetricHandler(event);
-  }
-
-  // 13. Activities API
-  if (
-    method === "GET" &&
-    (rawPath.endsWith("/activities") || rawPath.includes("/activities/"))
-  ) {
-    return getActivitiesHandler(event);
-  }
-  if (method === "POST" && rawPath.endsWith("/activities")) {
-    return createActivityHandler(event);
-  }
-
-  // Fallback 404
-  return {
-    statusCode: 404,
-    headers: CORS_HEADERS,
-    body: JSON.stringify({
-      success: false,
-      error: `Route not found for method ${method} at path ${rawPath}`,
-    }),
-  };
 }

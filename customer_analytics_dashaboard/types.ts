@@ -694,3 +694,26 @@ export interface CreateActivityResponse {
   activity?: ActivityRecord;
   error?: string;
 }
+
+/**
+ * SuperBlock Customer Analytics API types (GET /customeranalytics)
+ */
+export interface ApiCustomerRecord {
+  user_id: string;
+  customer_id?: string;
+  business_account_id?: string | null;
+  business_name?: string | null;
+  business_phone_number_id?: string | null;
+  business_portfolio_id?: string | null;
+  created_at?: string | null;
+  email?: string | null;
+  user_email?: string | null;
+  user_name?: string | null;
+}
+
+export interface CustomerAnalyticsApiResponse {
+  success: boolean;
+  count: number;
+  users: ApiCustomerRecord[];
+  error?: string;
+}
