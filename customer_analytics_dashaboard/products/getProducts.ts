@@ -55,7 +55,22 @@ export async function getProductsHandler(
          OR client_user_id IN (
            SELECT cd.client_user_id 
            FROM public.customers_details cd 
-           WHERE cd.id::text = $1
+           LEFT JOIN public.users u ON (
+             LOWER(cd.client_user_id) = LOWER(u.user_name) 
+             OR LOWER(cd.client_user_id) = LOWER(u.email) 
+             OR LOWER(cd.client_user_id) = LOWER(u.user_email)
+             OR LOWER(cd.client_user_id) = LOWER(u.user_id::text)
+           )
+           WHERE cd.id::text = $1 
+              OR LOWER(cd.client_user_id) = LOWER($1)
+              OR u.user_id::text = $1
+         )
+         OR LOWER(client_user_id) IN (
+           SELECT LOWER(u.user_name)
+           FROM public.users u
+           WHERE u.user_id::text = $1
+              OR LOWER(u.user_email) = LOWER($1)
+              OR LOWER(u.email) = LOWER($1)
          )
       ORDER BY created_at DESC;
     `;

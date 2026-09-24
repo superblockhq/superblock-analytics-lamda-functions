@@ -58,8 +58,16 @@ export async function getCustomerOfferingsHandler(
       WHERE co.customer_id::text = $1
          OR co.customer_id IN (
            SELECT cd.id 
-           FROM public.customers_details cd 
-           WHERE LOWER(cd.client_user_id) = LOWER($1)
+           FROM public.customers_details cd
+           LEFT JOIN public.users u ON (
+             LOWER(cd.client_user_id) = LOWER(u.user_name) 
+             OR LOWER(cd.client_user_id) = LOWER(u.email) 
+             OR LOWER(cd.client_user_id) = LOWER(u.user_email)
+             OR LOWER(cd.client_user_id) = LOWER(u.user_id::text)
+           )
+           WHERE cd.id::text = $1 
+              OR LOWER(cd.client_user_id) = LOWER($1)
+              OR u.user_id::text = $1
          )
       ORDER BY co.created_at DESC NULLS LAST;
     `;
