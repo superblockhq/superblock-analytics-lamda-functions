@@ -32,6 +32,8 @@ import { createUsageMetricHandler } from "./usageMetrics/createUsageMetric";
 import { getActivitiesHandler } from "./activities/getActivities";
 import { createActivityHandler } from "./activities/createActivity";
 import { getCredentialsHandler } from "./credentials/getCredentials";
+import { getMessagesHandler } from "./messages/getMessages";
+import { getBroadcastsHandler } from "./broadcasts/getBroadcasts";
 
 export * from "./types";
 export * from "./db";
@@ -68,6 +70,8 @@ export { getUsageMetricsHandler } from "./usageMetrics/getUsageMetrics";
 export { createUsageMetricHandler } from "./usageMetrics/createUsageMetric";
 export { getActivitiesHandler } from "./activities/getActivities";
 export { createActivityHandler } from "./activities/createActivity";
+export { getMessagesHandler } from "./messages/getMessages";
+export { getBroadcastsHandler } from "./broadcasts/getBroadcasts";
 
 const CORS_HEADERS = {
   "Content-Type": "application/json",
@@ -144,6 +148,8 @@ export async function handler(
             "invoices",
             "usageMetrics",
             "activities",
+            "messages",
+            "broadcasts",
           ],
         }),
       };
@@ -391,6 +397,32 @@ export async function handler(
       (method === "GET" && (action === "credentials" || action === "get_credentials"))
     ) {
       return await getCredentialsHandler(event);
+    }
+
+    // 15. Messages API (AWS DynamoDB Messages table)
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/messages") ||
+          rawPath.includes("/messages/") ||
+          rawPath.endsWith("/usage-metrics/messages") ||
+          rawPath.includes("/usage-metrics/messages/"))) ||
+      (method === "GET" && (action === "messages" || action === "get_messages" || action === "dynamo_messages"))
+    ) {
+      return await getMessagesHandler(event);
+    }
+
+    // 16. Broadcasts API (PostgreSQL public.broadcasts)
+    if (
+      (method === "GET" &&
+        (rawPath.endsWith("/broadcasts") ||
+          rawPath.includes("/broadcasts/") ||
+          rawPath.endsWith("/broadcast-usage") ||
+          rawPath.endsWith("/broadcasts-usage") ||
+          rawPath.endsWith("/usage-metrics/broadcasts") ||
+          rawPath.includes("/usage-metrics/broadcasts/"))) ||
+      (method === "GET" && (action === "broadcasts" || action === "get_broadcasts" || action === "broadcast_usage"))
+    ) {
+      return await getBroadcastsHandler(event);
     }
 
     // Fallback 404

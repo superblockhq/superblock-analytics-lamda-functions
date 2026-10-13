@@ -717,3 +717,150 @@ export interface CustomerAnalyticsApiResponse {
   users: ApiCustomerRecord[];
   error?: string;
 }
+
+/**
+ * Exact schema for AWS DynamoDB Messages table
+ */
+export interface DynamoDbMessageRecord {
+  "client#user_id"?: string;
+  client_user_id?: string;
+  user_id?: string;
+  message_id?: string;
+  direction?: string;
+  message_type?: string;
+  messageStatus?: string;
+  timestamp?: number | string;
+  message_text?: string;
+  media_url?: string;
+  [key: string]: any;
+}
+
+export interface DynamoMessageDirectionBreakdown {
+  inbound: number;
+  outbound: number;
+  other: number;
+}
+
+export interface DynamoMessageDailyCount {
+  date: string;
+  inbound: number;
+  outbound: number;
+  total: number;
+}
+
+export interface DynamoMessageRecentItem {
+  message_id?: string;
+  direction?: string;
+  message_type?: string;
+  messageStatus?: string;
+  timestamp?: number | string;
+  formattedTime?: string;
+  snippet?: string;
+  hasMedia?: boolean;
+  media_url?: string;
+}
+
+export interface DynamoMessageMetrics {
+  totalMessages: number;
+  inboundMessages: number;
+  outboundMessages: number;
+  mediaMessages: number;
+  directionBreakdown: DynamoMessageDirectionBreakdown;
+  statusBreakdown: Record<string, number>;
+  typeBreakdown: Record<string, number>;
+  firstMessageAt: string | null;
+  lastMessageAt: string | null;
+  firstMessageTimestamp: number | null;
+  lastMessageTimestamp: number | null;
+  dailyBreakdown: DynamoMessageDailyCount[];
+  recentMessages: DynamoMessageRecentItem[];
+}
+
+export interface GetMessagesResponse {
+  success: boolean;
+  source: "dynamodb_messages";
+  table: string;
+  scope: "customer" | "platform";
+  customerId?: string;
+  count: number;
+  metrics?: DynamoMessageMetrics;
+  error?: string;
+  warning?: string;
+  queriedAt?: string;
+}
+
+/**
+ * Exact schema for public.broadcasts (operational PEG Admin database)
+ */
+export interface BroadcastRecord {
+  id: string;
+  user_id?: string | null;
+  user_name?: string | null;
+  campaign_name?: string | null;
+  template_name?: string | null;
+  message?: string | null;
+  message_txt?: string | null;
+  language?: string | null;
+  media_type?: string | null;
+  media_url?: string | null;
+  uploaded_file_url?: string | null;
+  media_handle?: string | null;
+  has_flow?: boolean | null;
+  business_phone_number_id?: string | null;
+  status?: string | null;
+  total_recipients?: number | null;
+  scheduled_at?: string | null;
+  sent_at?: string | null;
+  created_at?: string | null;
+  completed_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface BroadcastStatusCount {
+  status: string;
+  count: number;
+  recipients: number;
+}
+
+export interface BroadcastMediaTypeCount {
+  mediaType: string;
+  count: number;
+  recipients: number;
+}
+
+export interface BroadcastDailyCount {
+  date: string;
+  broadcasts: number;
+  recipients: number;
+}
+
+export interface BroadcastUsageMetrics {
+  totalBroadcasts: number;
+  totalRecipients: number;
+  avgRecipients: number | null;
+  maxRecipients: number | null;
+  minRecipients: number | null;
+  hasFlowCount: number;
+  statusBreakdown: Record<string, number>;
+  statusDetails: BroadcastStatusCount[];
+  mediaTypeBreakdown: Record<string, number>;
+  mediaTypeDetails: BroadcastMediaTypeCount[];
+  dailyBreakdown: BroadcastDailyCount[];
+  earliestBroadcastAt: string | null;
+  latestBroadcastAt: string | null;
+  recentBroadcasts: BroadcastRecord[];
+}
+
+export interface GetBroadcastsResponse {
+  success: boolean;
+  source: "postgresql_broadcasts";
+  table: string;
+  scope: "customer" | "platform";
+  customerId: string;
+  count: number;
+  totalBroadcasts: number;
+  totalRecipients: number;
+  metrics?: BroadcastUsageMetrics;
+  error?: string;
+  queriedAt?: string;
+}
