@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+customer_analytics_dashaboard/node_modules/
+
+# Build and deployment artifacts
+dist/
+customer_analytics_dashaboard/dist/
+*.zip
+customer_analytics_dashaboard/*.zip
+customer_analytics_dashaboard/index.js
+
+# Environment variables & local logs
+.env
+.env.local
+.env.*.local
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
