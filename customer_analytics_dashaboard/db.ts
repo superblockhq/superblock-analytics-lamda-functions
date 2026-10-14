@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Pool, type QueryResult, type QueryResultRow } from "pg";
 
 let cachedPool: Pool | null = null;
@@ -21,9 +22,10 @@ async function getDbCredentials(): Promise<{ username: string; password: string 
 
   if (secretArn) {
     try {
-      const { SecretsManagerClient, GetSecretValueCommand } = await import(
-        "@aws-sdk/client-secrets-manager"
-      );
+      const smPkg = "@aws-sdk/client-secrets-manager";
+      const { SecretsManagerClient, GetSecretValueCommand } = (await import(
+        smPkg
+      )) as any;
       const client = new SecretsManagerClient({ region: REGION });
       const command = new GetSecretValueCommand({ SecretId: secretArn });
       const response = await client.send(command);
@@ -77,11 +79,10 @@ async function getDbCredentials(): Promise<{ username: string; password: string 
           ? pgAdminPython
           : "python";
 
-      const { fileURLToPath } = await import("url");
       const currentDir =
         typeof __dirname !== "undefined"
           ? __dirname
-          : path.dirname(fileURLToPath(import.meta.url));
+          : process.cwd();
 
       const possibleScriptPaths = [
         path.resolve(process.cwd(), "server", "queryAnalyticsDb.py"),
