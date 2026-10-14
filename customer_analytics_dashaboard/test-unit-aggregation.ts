@@ -8,6 +8,7 @@ import type {
   BroadcastMediaTypeCount,
   BroadcastDailyCount,
 } from "./types";
+import { handler } from "./index";
 
 function assert(condition: boolean, msg: string) {
   if (condition) {
@@ -73,4 +74,69 @@ assert(totals.total_broadcasts === 12, "Broadcasts count is 12");
 assert(totals.total_recipients === 15400, "Total recipients is 15400");
 assert(totals.has_flow_count === 5, "Has flow count is 5");
 
-console.log("\nAll unit tests passed successfully!");
+// 3. Router 404 for Removed Candidate Routes
+console.log("\n[Test 3] Verifying 404 for removed candidate routes");
+async function verifyRemovedRoutes() {
+  const removedRoutes = [
+    "/contacts",
+    "/deals",
+    "/tickets",
+    "/team-members",
+    "/team_members",
+    "/products",
+    "/subscriptions",
+    "/customer-offerings",
+    "/customer_offerings",
+    "/invoices",
+    "/usage-metrics",
+  ];
+
+  for (const r of removedRoutes) {
+    const getRes = await handler({ httpMethod: "GET", path: r });
+    assert(getRes.statusCode === 404, `GET ${r} returns 404 (removed)`);
+    const postRes = await handler({ httpMethod: "POST", path: r });
+    assert(postRes.statusCode === 404, `POST ${r} returns 404 (removed)`);
+  }
+
+  // 4. Root Health Check & Introspection
+  console.log("\n[Test 4] Verifying root introspection supportedEntities");
+  const rootRes = await handler({ httpMethod: "GET", path: "/" });
+  assert(rootRes.statusCode === 200, "Root returns HTTP 200");
+  const rootBody = JSON.parse(rootRes.body);
+
+  const expectedEntities = [
+    "notes",
+    "meetings",
+    "customerDetails",
+    "activities",
+    "credentials",
+    "messages",
+    "broadcasts",
+  ];
+  for (const entity of expectedEntities) {
+    assert(rootBody.supportedEntities.includes(entity), `supportedEntities includes '${entity}'`);
+  }
+
+  const removedEntities = [
+    "contacts",
+    "deals",
+    "tickets",
+    "teamMembers",
+    "products",
+    "subscriptions",
+    "customerOfferings",
+    "invoices",
+    "usageMetrics",
+  ];
+  for (const entity of removedEntities) {
+    assert(!rootBody.supportedEntities.includes(entity), `supportedEntities does NOT include removed '${entity}'`);
+  }
+
+  console.log("\nAll unit and routing tests passed successfully!");
+}
+
+verifyRemovedRoutes().catch((err) => {
+  console.error("Test error:", err);
+  process.exit(1);
+});
+

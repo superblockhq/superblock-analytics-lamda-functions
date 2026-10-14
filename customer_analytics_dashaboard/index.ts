@@ -11,26 +11,7 @@ import { getMeetingsHandler } from "./meetings/getMeetings";
 import { createMeetingHandler } from "./meetings/createMeeting";
 import { deleteMeetingHandler } from "./meetings/deleteMeeting";
 import { updateMeetingHandler } from "./meetings/updateMeeting";
-import { getContactsHandler } from "./contacts/getContacts";
-import { createContactHandler } from "./contacts/createContact";
-import { getDealsHandler } from "./deals/getDeals";
-import { createDealHandler } from "./deals/createDeal";
-import { getTicketsHandler } from "./tickets/getTickets";
-import { createTicketHandler } from "./tickets/createTicket";
-import { getTeamMembersHandler } from "./teamMembers/getTeamMembers";
-import { createTeamMemberHandler } from "./teamMembers/createTeamMember";
-import { getProductsHandler } from "./products/getProducts";
-import { createProductHandler } from "./products/createProduct";
-import { getSubscriptionsHandler } from "./subscriptions/getSubscriptions";
-import { createSubscriptionHandler } from "./subscriptions/createSubscription";
-import { getCustomerOfferingsHandler } from "./customerOfferings/getCustomerOfferings";
-import { createCustomerOfferingHandler } from "./customerOfferings/createCustomerOffering";
-import { getInvoicesHandler } from "./invoices/getInvoices";
-import { createInvoiceHandler } from "./invoices/createInvoice";
-import { getUsageMetricsHandler } from "./usageMetrics/getUsageMetrics";
-import { createUsageMetricHandler } from "./usageMetrics/createUsageMetric";
 import { getActivitiesHandler } from "./activities/getActivities";
-import { createActivityHandler } from "./activities/createActivity";
 import { getCredentialsHandler } from "./credentials/getCredentials";
 import { getMessagesHandler } from "./messages/getMessages";
 import { getBroadcastsHandler } from "./broadcasts/getBroadcasts";
@@ -50,26 +31,7 @@ export { getMeetingsHandler } from "./meetings/getMeetings";
 export { createMeetingHandler } from "./meetings/createMeeting";
 export { deleteMeetingHandler } from "./meetings/deleteMeeting";
 export { updateMeetingHandler } from "./meetings/updateMeeting";
-export { getContactsHandler } from "./contacts/getContacts";
-export { createContactHandler } from "./contacts/createContact";
-export { getDealsHandler } from "./deals/getDeals";
-export { createDealHandler } from "./deals/createDeal";
-export { getTicketsHandler } from "./tickets/getTickets";
-export { createTicketHandler } from "./tickets/createTicket";
-export { getTeamMembersHandler } from "./teamMembers/getTeamMembers";
-export { createTeamMemberHandler } from "./teamMembers/createTeamMember";
-export { getProductsHandler } from "./products/getProducts";
-export { createProductHandler } from "./products/createProduct";
-export { getSubscriptionsHandler } from "./subscriptions/getSubscriptions";
-export { createSubscriptionHandler } from "./subscriptions/createSubscription";
-export { getCustomerOfferingsHandler } from "./customerOfferings/getCustomerOfferings";
-export { createCustomerOfferingHandler } from "./customerOfferings/createCustomerOffering";
-export { getInvoicesHandler } from "./invoices/getInvoices";
-export { createInvoiceHandler } from "./invoices/createInvoice";
-export { getUsageMetricsHandler } from "./usageMetrics/getUsageMetrics";
-export { createUsageMetricHandler } from "./usageMetrics/createUsageMetric";
 export { getActivitiesHandler } from "./activities/getActivities";
-export { createActivityHandler } from "./activities/createActivity";
 export { getMessagesHandler } from "./messages/getMessages";
 export { getBroadcastsHandler } from "./broadcasts/getBroadcasts";
 
@@ -138,16 +100,8 @@ export async function handler(
             "notes",
             "meetings",
             "customerDetails",
-            "contacts",
-            "deals",
-            "tickets",
-            "teamMembers",
-            "products",
-            "subscriptions",
-            "customerOfferings",
-            "invoices",
-            "usageMetrics",
             "activities",
+            "credentials",
             "messages",
             "broadcasts",
           ],
@@ -229,165 +183,14 @@ export async function handler(
       return await updateMeetingHandler(event);
     }
 
-    // 4. Contacts API
-    if (
-      (method === "GET" && (rawPath.endsWith("/contacts") || rawPath.includes("/contacts/"))) ||
-      (method === "GET" && (action === "contacts" || action === "get_contacts"))
-    ) {
-      return await getContactsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/contacts")) ||
-      (method === "POST" && (action === "contacts" || action === "create_contact"))
-    ) {
-      return await createContactHandler(event);
-    }
 
-    // 5. Deals API
-    if (
-      (method === "GET" && (rawPath.endsWith("/deals") || rawPath.includes("/deals/"))) ||
-      (method === "GET" && (action === "deals" || action === "get_deals"))
-    ) {
-      return await getDealsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/deals")) ||
-      (method === "POST" && (action === "deals" || action === "create_deal"))
-    ) {
-      return await createDealHandler(event);
-    }
-
-    // 6. Tickets API
-    if (
-      (method === "GET" && (rawPath.endsWith("/tickets") || rawPath.includes("/tickets/"))) ||
-      (method === "GET" && (action === "tickets" || action === "get_tickets"))
-    ) {
-      return await getTicketsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/tickets")) ||
-      (method === "POST" && (action === "tickets" || action === "create_ticket"))
-    ) {
-      return await createTicketHandler(event);
-    }
-
-    // 7. Team Members API
-    if (
-      (method === "GET" &&
-        (rawPath.endsWith("/team-members") ||
-          rawPath.includes("/team-members/") ||
-          rawPath.endsWith("/team_members") ||
-          rawPath.includes("/team_members/"))) ||
-      (method === "GET" && (action === "team_members" || action === "team-members" || action === "teammembers"))
-    ) {
-      return await getTeamMembersHandler(event);
-    }
-    if (
-      (method === "POST" &&
-        (rawPath.endsWith("/team-members") || rawPath.endsWith("/team_members"))) ||
-      (method === "POST" && (action === "team_members" || action === "team-members" || action === "teammembers"))
-    ) {
-      return await createTeamMemberHandler(event);
-    }
-
-    // 8. Products API
-    if (
-      (method === "GET" && (rawPath.endsWith("/products") || rawPath.includes("/products/"))) ||
-      (method === "GET" && (action === "products" || action === "get_products"))
-    ) {
-      return await getProductsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/products")) ||
-      (method === "POST" && (action === "products" || action === "create_product"))
-    ) {
-      return await createProductHandler(event);
-    }
-
-    // 9. Subscriptions API
-    if (
-      (method === "GET" &&
-        (rawPath.endsWith("/subscriptions") || rawPath.includes("/subscriptions/"))) ||
-      (method === "GET" && (action === "subscriptions" || action === "get_subscriptions"))
-    ) {
-      return await getSubscriptionsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/subscriptions")) ||
-      (method === "POST" && (action === "subscriptions" || action === "create_subscription"))
-    ) {
-      return await createSubscriptionHandler(event);
-    }
-
-    // 10. Customer Offerings API
-    if (
-      (method === "GET" &&
-        (rawPath.endsWith("/customer-offerings") ||
-          rawPath.includes("/customer-offerings/") ||
-          rawPath.endsWith("/customer_offerings") ||
-          rawPath.includes("/customer_offerings/") ||
-          rawPath.endsWith("/offerings") ||
-          rawPath.includes("/offerings/"))) ||
-      (method === "GET" && (action === "customer_offerings" || action === "customer-offerings" || action === "offerings"))
-    ) {
-      return await getCustomerOfferingsHandler(event);
-    }
-    if (
-      (method === "POST" &&
-        (rawPath.endsWith("/customer-offerings") ||
-          rawPath.endsWith("/customer_offerings") ||
-          rawPath.endsWith("/offerings"))) ||
-      (method === "POST" && (action === "customer_offerings" || action === "customer-offerings" || action === "offerings"))
-    ) {
-      return await createCustomerOfferingHandler(event);
-    }
-
-    // 11. Invoices API
-    if (
-      (method === "GET" && (rawPath.endsWith("/invoices") || rawPath.includes("/invoices/"))) ||
-      (method === "GET" && (action === "invoices" || action === "get_invoices"))
-    ) {
-      return await getInvoicesHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/invoices")) ||
-      (method === "POST" && (action === "invoices" || action === "create_invoice"))
-    ) {
-      return await createInvoiceHandler(event);
-    }
-
-    // 12. Usage Metrics API
-    if (
-      (method === "GET" &&
-        (rawPath.endsWith("/usage-metrics") ||
-          rawPath.includes("/usage-metrics/") ||
-          rawPath.endsWith("/usage_metrics") ||
-          rawPath.includes("/usage_metrics/"))) ||
-      (method === "GET" && (action === "usage_metrics" || action === "usage-metrics" || action === "usagemetrics"))
-    ) {
-      return await getUsageMetricsHandler(event);
-    }
-    if (
-      (method === "POST" &&
-        (rawPath.endsWith("/usage-metrics") || rawPath.endsWith("/usage_metrics"))) ||
-      (method === "POST" && (action === "usage_metrics" || action === "usage-metrics" || action === "usagemetrics"))
-    ) {
-      return await createUsageMetricHandler(event);
-    }
-
-    // 13. Activities API
+    // 4. Activities API
     if (
       (method === "GET" &&
         (rawPath.endsWith("/activities") || rawPath.includes("/activities/"))) ||
       (method === "GET" && (action === "activities" || action === "get_activities"))
     ) {
       return await getActivitiesHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/activities")) ||
-      (method === "POST" && (action === "activities" || action === "create_activity"))
-    ) {
-      return await createActivityHandler(event);
     }
 
     // 14. Credentials API
