@@ -89,6 +89,7 @@ async function verifyRemovedRoutes() {
     "/customer_offerings",
     "/invoices",
     "/usage-metrics",
+    "/meetings",
   ];
 
   for (const r of removedRoutes) {
@@ -96,6 +97,10 @@ async function verifyRemovedRoutes() {
     assert(getRes.statusCode === 404, `GET ${r} returns 404 (removed)`);
     const postRes = await handler({ httpMethod: "POST", path: r });
     assert(postRes.statusCode === 404, `POST ${r} returns 404 (removed)`);
+    const putRes = await handler({ httpMethod: "PUT", path: `${r}/123` });
+    assert(putRes.statusCode === 404, `PUT ${r}/123 returns 404 (removed)`);
+    const delRes = await handler({ httpMethod: "DELETE", path: `${r}/123` });
+    assert(delRes.statusCode === 404, `DELETE ${r}/123 returns 404 (removed)`);
   }
 
   // 4. Root Health Check & Introspection
@@ -106,7 +111,6 @@ async function verifyRemovedRoutes() {
 
   const expectedEntities = [
     "notes",
-    "meetings",
     "customerDetails",
     "activities",
     "credentials",
@@ -127,6 +131,7 @@ async function verifyRemovedRoutes() {
     "customerOfferings",
     "invoices",
     "usageMetrics",
+    "meetings",
   ];
   for (const entity of removedEntities) {
     assert(!rootBody.supportedEntities.includes(entity), `supportedEntities does NOT include removed '${entity}'`);

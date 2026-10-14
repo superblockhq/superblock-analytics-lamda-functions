@@ -7,10 +7,6 @@ import {
   getCustomerDetailsHandler,
   listCustomerDetailsHandler,
 } from "./customerDetails/getCustomerDetails";
-import { getMeetingsHandler } from "./meetings/getMeetings";
-import { createMeetingHandler } from "./meetings/createMeeting";
-import { deleteMeetingHandler } from "./meetings/deleteMeeting";
-import { updateMeetingHandler } from "./meetings/updateMeeting";
 import { getActivitiesHandler } from "./activities/getActivities";
 import { getCredentialsHandler } from "./credentials/getCredentials";
 import { getMessagesHandler } from "./messages/getMessages";
@@ -27,10 +23,6 @@ export {
   getCustomerDetailsHandler,
   listCustomerDetailsHandler,
 } from "./customerDetails/getCustomerDetails";
-export { getMeetingsHandler } from "./meetings/getMeetings";
-export { createMeetingHandler } from "./meetings/createMeeting";
-export { deleteMeetingHandler } from "./meetings/deleteMeeting";
-export { updateMeetingHandler } from "./meetings/updateMeeting";
 export { getActivitiesHandler } from "./activities/getActivities";
 export { getMessagesHandler } from "./messages/getMessages";
 export { getBroadcastsHandler } from "./broadcasts/getBroadcasts";
@@ -98,7 +90,6 @@ export async function handler(
           version: "1.0.0",
           supportedEntities: [
             "notes",
-            "meetings",
             "customerDetails",
             "activities",
             "credentials",
@@ -155,32 +146,6 @@ export async function handler(
         return await getCustomerDetailsHandler(event);
       }
       return await listCustomerDetailsHandler(event);
-    }
-
-    // 3. Meetings API
-    if (
-      (method === "GET" && (rawPath.endsWith("/meetings") || rawPath.includes("/meetings/"))) ||
-      (method === "GET" && (action === "meetings" || action === "get_meetings"))
-    ) {
-      return await getMeetingsHandler(event);
-    }
-    if (
-      (method === "POST" && rawPath.endsWith("/meetings")) ||
-      (method === "POST" && (action === "meetings" || action === "create_meeting"))
-    ) {
-      return await createMeetingHandler(event);
-    }
-    if (
-      (method === "DELETE" && (rawPath.includes("/meetings/") || rawPath.endsWith("/meetings"))) ||
-      (method === "DELETE" && (action === "delete_meeting" || action === "meetings"))
-    ) {
-      return await deleteMeetingHandler(event);
-    }
-    if (
-      ((method === "PUT" || method === "PATCH") && (rawPath.includes("/meetings/") || rawPath.endsWith("/meetings"))) ||
-      ((method === "PUT" || method === "PATCH") && (action === "update_meeting" || action === "meetings"))
-    ) {
-      return await updateMeetingHandler(event);
     }
 
 
